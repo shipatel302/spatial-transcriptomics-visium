@@ -1,0 +1,42 @@
+name: CI — Lint + Demo
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-demo:
+    name: Python lint + demo run
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install scanpy squidpy anndata numpy pandas scipy \
+                      matplotlib seaborn pyyaml flake8
+
+      - name: Lint with flake8
+        run: |
+          flake8 pipeline/ scripts/ run_pipeline.py \
+            --max-line-length=100 \
+            --ignore=E501,W503 \
+            --exclude=__init__.py
+        continue-on-error: true
+
+      - name: Run demo pipeline
+        run: python scripts/run_demo.py
+
+      - name: Check outputs exist
+        run: |
+          ls results/demo/qc/
+          ls results/demo/spatial_de/

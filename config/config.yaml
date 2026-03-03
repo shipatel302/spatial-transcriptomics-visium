@@ -1,0 +1,121 @@
+# config/config.yaml
+# Spatial Transcriptomics Pipeline — 10x Visium
+
+# ── Samples ───────────────────────────────────────────────────────────────────
+samples:
+  - id:          "SAMPLE_01"
+    spaceranger: "data/spaceranger/SAMPLE_01"
+    condition:   "tumor"
+    patient:     "P01"
+    tissue:      "HNSCC"
+
+  - id:          "SAMPLE_02"
+    spaceranger: "data/spaceranger/SAMPLE_02"
+    condition:   "adjacent_normal"
+    patient:     "P01"
+    tissue:      "HNSCC"
+
+  - id:          "SAMPLE_03"
+    spaceranger: "data/spaceranger/SAMPLE_03"
+    condition:   "tumor"
+    patient:     "P02"
+    tissue:      "HNSCC"
+
+# ── QC thresholds ─────────────────────────────────────────────────────────────
+qc:
+  min_counts:        500       # Min UMI counts per spot
+  max_counts:        50000     # Max UMI (cap doublet-like spots)
+  min_genes:         200       # Min genes per spot
+  max_pct_mito:      25        # Max % mitochondrial counts
+  min_spots_per_gene: 3        # Min spots expressing a gene
+  flag_tissue_only:  true      # Restrict to tissue-covered spots
+
+# ── Preprocessing ─────────────────────────────────────────────────────────────
+preprocessing:
+  normalization:     "scran"   # "scran" | "scanpy_normalize_total"
+  log_transform:     true
+  n_top_genes:       3000      # Highly variable genes
+  scale:             true
+  regress_out:
+    - "total_counts"
+    - "pct_counts_mt"
+
+# ── Dimensionality reduction ──────────────────────────────────────────────────
+dim_reduction:
+  n_pcs:      50
+  n_neighbors: 15
+  umap_min_dist: 0.3
+
+# ── Spatially-aware clustering ────────────────────────────────────────────────
+clustering:
+  method:      "leiden"         # "leiden" | "louvain" | "mclust"
+  resolution:  [0.3, 0.5, 0.8] # Multiple resolutions evaluated
+  use_spatial: true             # Weight graph by spatial proximity
+  spatial_key: "spatial"
+
+# ── SpatialDE ────────────────────────────────────────────────────────────────
+spatial_de:
+  n_top_svg:   500              # Top spatially variable genes
+  omnibus:     true             # Run SpatialDE omnibus test
+  pattern_discovery: true       # Automatic expression pattern discovery
+
+# ── Cell type deconvolution ───────────────────────────────────────────────────
+deconvolution:
+  method:      "RCTD"           # "RCTD" | "STdeconvolve" | "cell2location"
+  reference:   "data/reference/sc_reference.h5ad"   # scRNA-seq reference
+  cell_types:
+    - "Tumor"
+    - "T_cell_CD8"
+    - "T_cell_CD4"
+    - "Macrophage_M1"
+    - "Macrophage_M2"
+    - "CAF"                     # Cancer-associated fibroblast
+    - "Endothelial"
+    - "B_cell"
+    - "NK_cell"
+    - "Dendritic_cell"
+
+# ── Tumor microenvironment ────────────────────────────────────────────────────
+tme:
+  tumor_label:     "Tumor"
+  immune_labels:
+    - "T_cell_CD8"
+    - "T_cell_CD4"
+    - "Macrophage_M1"
+    - "Macrophage_M2"
+    - "NK_cell"
+  stromal_labels:
+    - "CAF"
+    - "Endothelial"
+  neighborhood_radius: 150      # µm radius for neighborhood analysis
+
+# ── Cell-cell communication ────────────────────────────────────────────────────
+communication:
+  method:       "squidpy"        # "squidpy" | "cellchat_r"
+  library:      "CellChatDB"
+  n_permutations: 1000
+  coord_type:   "generic"
+  n_rings:       2              # Spatial neighbor rings
+
+# ── Differential expression ───────────────────────────────────────────────────
+differential_expression:
+  method:       "wilcoxon"
+  alpha:        0.05
+  lfc_min:      0.5
+  min_pct:      0.1
+  compare:
+    - ["tumor", "adjacent_normal"]
+
+# ── Visualization ─────────────────────────────────────────────────────────────
+visualization:
+  dpi:          300
+  figsize:      [10, 8]
+  colormap:     "viridis"
+  spot_size:    1.5
+  save_formats: ["pdf", "png"]
+
+# ── Output ────────────────────────────────────────────────────────────────────
+output:
+  save_h5ad:    true
+  save_figures: true
+  report:       true

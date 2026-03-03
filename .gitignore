@@ -1,0 +1,12 @@
+data/
+results/
+*.h5ad
+*.h5
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.egg-info/
+.DS_Store
+Thumbs.db
+.Rhistory
+*.RData
